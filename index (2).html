@@ -1,0 +1,1613 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Dying of Thirst — A Water Crisis Story</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=IBM+Plex+Mono:wght@300;400;500&family=Inter:wght@300;400;500;600;700&display=swap');
+
+  :root {
+    --ink: #0a0d15;
+    --cream: #ede8e0;
+    --water: #1b7fa0;
+    --water-light: #5db8d8;
+    --water-deep: #0e3a4f;
+    --drought: #d46a2a;
+    --drought-light: #f5b860;
+    --danger: #b84545;
+    --safe: #3d8f62;
+    --mid: #d4a938;
+    --text-muted: #8a8a9a;
+    --line: #1f252f;
+    --accent: #4fdfe8;
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  html { scroll-behavior: smooth; font-size: 16px; }
+
+  body {
+    background: var(--ink);
+    color: var(--cream);
+    font-family: 'Inter', sans-serif;
+    overflow-x: hidden;
+    line-height: 1.6;
+  }
+
+  /* ─── HERO ─── */
+  #hero {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    background: radial-gradient(ellipse at 50% 40%, #0f3d52 0%, #0a0d15 70%);
+    overflow: hidden;
+  }
+
+  #hero-water-bg {
+    position: absolute; inset: 0;
+    opacity: 0.1;
+  }
+
+  .hero-content {
+    position: relative;
+    z-index: 2;
+    text-align: center;
+    padding: 2rem;
+    max-width: 900px;
+  }
+
+  .hero-eyebrow {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.25em;
+    color: var(--water-light);
+    text-transform: uppercase;
+    margin-bottom: 1.5rem;
+    opacity: 0;
+    animation: fadeUp 1s 0.3s forwards;
+  }
+
+  .hero-title {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(3rem, 8vw, 7rem);
+    font-weight: 900;
+    line-height: 1;
+    color: var(--cream);
+    margin-bottom: 0.5rem;
+    opacity: 0;
+    animation: fadeUp 1s 0.6s forwards;
+  }
+
+  .hero-title em {
+    font-style: italic;
+    color: var(--accent);
+    text-shadow: 0 0 30px rgba(79, 223, 232, 0.3);
+  }
+
+  .hero-subtitle {
+    font-family: 'Inter', sans-serif;
+    font-size: clamp(1.05rem, 2.5vw, 1.4rem);
+    font-weight: 300;
+    color: rgba(237, 232, 224, 0.75);
+    margin-top: 1.2rem;
+    margin-bottom: 2.5rem;
+    opacity: 0;
+    animation: fadeUp 1s 0.9s forwards;
+    line-height: 1.5;
+  }
+
+  .hero-stat-row {
+    display: flex;
+    gap: 2.5rem;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-top: 2rem;
+    opacity: 0;
+    animation: fadeUp 1s 1.2s forwards;
+  }
+
+  .hero-stat {
+    text-align: center;
+    padding: 1rem;
+    border-radius: 8px;
+    background: rgba(27, 127, 160, 0.08);
+    border: 1px solid rgba(93, 184, 216, 0.2);
+    transition: all 0.3s ease;
+  }
+
+  .hero-stat:hover {
+    background: rgba(27, 127, 160, 0.15);
+    border-color: rgba(93, 184, 216, 0.5);
+    transform: translateY(-4px);
+  }
+
+  .hero-stat .num {
+    font-family: 'Playfair Display', serif;
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--accent);
+    line-height: 1;
+  }
+
+  .hero-stat .label {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.7rem;
+    letter-spacing: 0.08em;
+    color: rgba(237, 232, 224, 0.55);
+    text-transform: uppercase;
+    margin-top: 0.5rem;
+  }
+
+  .scroll-cue {
+    position: absolute;
+    bottom: 2.5rem;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    opacity: 0;
+    animation: fadeIn 1s 2s forwards;
+  }
+
+  .scroll-cue span {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.6rem;
+    letter-spacing: 0.2em;
+    color: rgba(237, 232, 224, 0.4);
+    text-transform: uppercase;
+  }
+
+  .scroll-arrow {
+    width: 2px;
+    height: 40px;
+    background: linear-gradient(to bottom, rgba(237, 232, 224, 0.5), transparent);
+    animation: scrollDown 1.8s ease-in-out infinite;
+  }
+
+  /* ─── NAV ─── */
+  #sticky-nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    background: rgba(10, 13, 21, 0.95);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(93, 184, 216, 0.1);
+    display: flex;
+    align-items: center;
+    padding: 0.8rem 2rem;
+    gap: 2rem;
+    transform: translateY(-100%);
+    transition: transform 0.4s ease;
+  }
+
+  #sticky-nav.visible { transform: translateY(0); }
+
+  .nav-brand {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.75rem;
+    letter-spacing: 0.15em;
+    color: var(--water-light);
+    text-transform: uppercase;
+    white-space: nowrap;
+    flex-shrink: 0;
+    font-weight: 600;
+  }
+
+  .nav-links {
+    display: flex;
+    gap: 2rem;
+    list-style: none;
+    overflow-x: auto;
+    padding-bottom: 2px;
+  }
+
+  .nav-links a {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    color: rgba(237, 232, 224, 0.5);
+    text-decoration: none;
+    text-transform: uppercase;
+    white-space: nowrap;
+    transition: all 0.3s;
+    position: relative;
+  }
+
+  .nav-links a:hover, .nav-links a.active {
+    color: var(--accent);
+  }
+
+  .nav-links a.active::after {
+    content: '';
+    position: absolute;
+    bottom: -8px;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: var(--accent);
+  }
+
+  /* ─── SECTION SHARED ─── */
+  section {
+    min-height: 100vh;
+    padding: 7rem 2rem 5rem;
+  }
+
+  .section-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  .section-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.25em;
+    color: var(--water-light);
+    text-transform: uppercase;
+    margin-bottom: 1.5rem;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.7s, transform 0.7s;
+  }
+
+  .section-label.visible { opacity: 1; transform: none; }
+
+  .section-title {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(2.2rem, 5vw, 3.5rem);
+    font-weight: 700;
+    line-height: 1.1;
+    margin-bottom: 1.5rem;
+    opacity: 0;
+    transform: translateY(25px);
+    transition: opacity 0.7s 0.1s, transform 0.7s 0.1s;
+  }
+
+  .section-title.visible { opacity: 1; transform: none; }
+
+  .section-prose {
+    font-family: 'Inter', sans-serif;
+    font-size: 1.1rem;
+    line-height: 1.8;
+    color: rgba(237, 232, 224, 0.85);
+    max-width: 680px;
+    margin-bottom: 3rem;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.7s 0.2s, transform 0.7s 0.2s;
+  }
+
+  .section-prose.visible { opacity: 1; transform: none; }
+
+  .section-prose strong { color: var(--cream); font-weight: 600; }
+  .section-prose em { color: var(--accent); font-style: italic; }
+
+  /* ─── CHART WRAPPERS ─── */
+  .chart-card {
+    background: rgba(27, 127, 160, 0.06);
+    border: 1px solid rgba(93, 184, 216, 0.15);
+    border-radius: 8px;
+    padding: 2rem;
+    margin-top: 2rem;
+    opacity: 0;
+    transform: translateY(30px);
+    transition: opacity 0.8s 0.3s, transform 0.8s 0.3s;
+  }
+
+  .chart-card.visible { opacity: 1; transform: none; }
+
+  .chart-card:hover {
+    border-color: rgba(93, 184, 216, 0.3);
+    background: rgba(27, 127, 160, 0.09);
+  }
+
+  .chart-title {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.15em;
+    color: rgba(237, 232, 224, 0.5);
+    text-transform: uppercase;
+    margin-bottom: 1.5rem;
+  }
+
+  svg { overflow: visible; }
+
+  .axis text {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    fill: rgba(237, 232, 224, 0.5);
+  }
+
+  .axis path, .axis line {
+    stroke: rgba(237, 232, 224, 0.15);
+  }
+
+  .grid line { stroke: rgba(237, 232, 224, 0.08); stroke-dasharray: 3,3; }
+  .grid path { stroke: none; }
+
+  /* tooltip */
+  #tooltip {
+    position: fixed;
+    background: rgba(10, 13, 21, 0.98);
+    border: 1px solid rgba(93, 184, 216, 0.4);
+    border-radius: 6px;
+    padding: 0.9rem 1.2rem;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.8rem;
+    color: var(--cream);
+    pointer-events: none;
+    z-index: 999;
+    opacity: 0;
+    max-width: 260px;
+    line-height: 1.8;
+    transition: opacity 0.15s;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+  }
+
+  #tooltip.show { opacity: 1; }
+  #tooltip strong { color: var(--accent); display: block; margin-bottom: 4px; font-weight: 600; }
+
+  /* ─── SECTION BACKGROUNDS ─── */
+  #access { background: var(--ink); }
+  #stress { background: linear-gradient(180deg, var(--ink) 0%, #0d1a22 100%); }
+  #mortality { background: linear-gradient(180deg, #0d1a22 0%, #0a0d15 100%); }
+  #groundwater { background: linear-gradient(180deg, #0a0d15 0%, var(--ink) 100%); }
+  #explorer { background: var(--ink); }
+  #outlook { background: linear-gradient(180deg, var(--ink) 0%, #0d1d2a 100%); }
+
+  /* ─── ACCESS MAP ─── */
+  .world-map-container { width: 100%; overflow: hidden; }
+
+  .country-path { stroke: rgba(237, 232, 224, 0.08); stroke-width: 0.5; cursor: pointer; transition: all 0.2s; }
+  .country-path:hover { opacity: 1; stroke: var(--accent); stroke-width: 1.5; filter: brightness(1.3); }
+
+  .map-legend { display: flex; gap: 0.8rem; align-items: center; flex-wrap: wrap; margin-top: 1.5rem; }
+  .legend-item { display: flex; align-items: center; gap: 0.5rem; font-family: 'Inter', sans-serif; font-size: 0.75rem; color: rgba(237, 232, 224, 0.6); }
+  .legend-swatch { width: 20px; height: 14px; border-radius: 3px; }
+
+  /* ─── BARS ─── */
+  .bar { cursor: pointer; transition: all 0.2s; }
+  .bar:hover { opacity: 1; filter: brightness(1.2); }
+
+  /* ─── DOTS ─── */
+  .dot { cursor: pointer; transition: all 0.2s; }
+  .dot:hover { opacity: 0.95; filter: brightness(1.15); r: 8px !important; }
+
+  /* ─── EXPLORER ─── */
+  #explorer { min-height: auto; padding: 5rem 2rem; }
+
+  .explorer-controls {
+    display: flex;
+    gap: 2rem;
+    flex-wrap: wrap;
+    margin-bottom: 2rem;
+  }
+
+  .ctrl-group label {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.7rem;
+    letter-spacing: 0.12em;
+    color: rgba(237, 232, 224, 0.6);
+    text-transform: uppercase;
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+  }
+
+  .ctrl-group select {
+    background: rgba(27, 127, 160, 0.08);
+    border: 1px solid rgba(93, 184, 216, 0.2);
+    border-radius: 5px;
+    color: var(--cream);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.85rem;
+    padding: 0.6rem 0.9rem;
+    cursor: pointer;
+    appearance: none;
+    transition: all 0.3s;
+  }
+
+  .ctrl-group select:hover {
+    background: rgba(27, 127, 160, 0.12);
+    border-color: rgba(93, 184, 216, 0.4);
+  }
+
+  .explorer-chart-wrap { width: 100%; }
+
+  /* ─── OUTLOOK ─── */
+  .outlook-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 1.8rem;
+    margin-top: 3rem;
+  }
+
+  .outlook-card {
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 1.8rem;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: all 0.6s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .outlook-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: -100%;
+    width: 100%; height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.05), transparent);
+    transition: left 0.6s;
+  }
+
+  .outlook-card:hover::before { left: 100%; }
+
+  .outlook-card.visible { opacity: 1; transform: none; }
+  .outlook-card:nth-child(2) { transition-delay: 0.1s; }
+  .outlook-card:nth-child(3) { transition-delay: 0.2s; }
+  .outlook-card:nth-child(4) { transition-delay: 0.3s; }
+
+  .outlook-card.bad { border-color: rgba(184, 69, 69, 0.3); background: rgba(184, 69, 69, 0.08); }
+  .outlook-card.warn { border-color: rgba(212, 106, 42, 0.3); background: rgba(212, 106, 42, 0.08); }
+  .outlook-card.ok { border-color: rgba(61, 143, 98, 0.3); background: rgba(61, 143, 98, 0.08); }
+
+  .outlook-card:hover {
+    border-color: rgba(93, 184, 216, 0.4);
+    transform: translateY(-8px);
+  }
+
+  .outlook-num { font-family: 'Playfair Display', serif; font-size: 2.8rem; font-weight: 700; line-height: 1; margin-bottom: 0.5rem; }
+  .outlook-num.bad { color: var(--danger); }
+  .outlook-num.warn { color: var(--drought); }
+  .outlook-num.ok { color: var(--safe); }
+  .outlook-label { font-family: 'Inter', sans-serif; font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(237, 232, 224, 0.55); margin-bottom: 0.8rem; font-weight: 500; }
+  .outlook-desc { font-family: 'Inter', sans-serif; font-size: 0.95rem; line-height: 1.7; color: rgba(237, 232, 224, 0.7); }
+
+  /* ─── FOOTER ─── */
+  footer {
+    background: linear-gradient(180deg, var(--ink) 0%, #0f1620 100%);
+    border-top: 1px solid rgba(93, 184, 216, 0.1);
+    padding: 4rem 2rem;
+    text-align: center;
+  }
+
+  .footer-inner { max-width: 900px; margin: 0 auto; }
+
+  .footer-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--cream);
+    margin-bottom: 1rem;
+  }
+
+  .footer-meta {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.8rem;
+    line-height: 2;
+    color: rgba(237, 232, 224, 0.4);
+  }
+
+  .footer-meta a { color: var(--water-light); text-decoration: none; transition: color 0.3s; }
+  .footer-meta a:hover { color: var(--accent); }
+
+  /* ─── PULLQUOTE ─── */
+  .pullquote {
+    border-left: 4px solid var(--accent);
+    padding: 1rem 1.8rem;
+    margin: 2rem 0;
+    font-family: 'Playfair Display', serif;
+    font-size: 1.25rem;
+    font-style: italic;
+    color: var(--cream);
+    opacity: 0;
+    transform: translateX(-20px);
+    transition: opacity 0.7s 0.3s, transform 0.7s 0.3s;
+    background: rgba(79, 223, 232, 0.04);
+    border-radius: 0 6px 6px 0;
+  }
+  .pullquote.visible { opacity: 1; transform: none; }
+
+  /* ─── KEYFRAMES ─── */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: none; }
+  }
+
+  @keyframes fadeIn {
+    to { opacity: 1; }
+  }
+
+  @keyframes scrollDown {
+    0%, 100% { transform: scaleY(1); opacity: 0.4; }
+    50% { transform: scaleY(0.5); opacity: 1; }
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+  }
+
+  /* Two-column layout for larger screens */
+  @media (min-width: 900px) {
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4rem;
+      align-items: start;
+    }
+    .two-col .text-side { padding-top: 1rem; }
+  }
+
+  /* Progress bar */
+  #progress-bar {
+    position: fixed;
+    top: 0; left: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--water), var(--accent), var(--water-light));
+    box-shadow: 0 0 20px rgba(79, 223, 232, 0.4);
+    z-index: 200;
+    transition: width 0.1s linear;
+  }
+
+  /* Loading dots */
+  .loading-dots {
+    display: inline-flex;
+    gap: 4px;
+    align-items: center;
+  }
+
+  .loading-dots span {
+    width: 6px;
+    height: 6px;
+    background: var(--accent);
+    border-radius: 50%;
+    animation: pulse 1.4s infinite;
+  }
+
+  .loading-dots span:nth-child(2) { animation-delay: 0.2s; }
+  .loading-dots span:nth-child(3) { animation-delay: 0.4s; }
+</style>
+</head>
+<body>
+
+<div id="progress-bar"></div>
+<div id="tooltip"></div>
+
+<!-- STICKY NAV -->
+<nav id="sticky-nav">
+  <div class="nav-brand">💧 Dying of Thirst</div>
+  <ul class="nav-links">
+    <li><a href="#access">Access</a></li>
+    <li><a href="#stress">Water Stress</a></li>
+    <li><a href="#mortality">Mortality</a></li>
+    <li><a href="#groundwater">Groundwater</a></li>
+    <li><a href="#explorer">Explore</a></li>
+    <li><a href="#outlook">Outlook</a></li>
+  </ul>
+</nav>
+
+<!-- HERO -->
+<section id="hero">
+  <svg id="hero-water-bg" viewBox="0 0 1200 500" preserveAspectRatio="xMidYMid slice">
+    <defs>
+      <filter id="blur-wave"><feGaussianBlur stdDeviation="2.5"/></filter>
+    </defs>
+    <g filter="url(#blur-wave)">
+      <ellipse cx="600" cy="250" rx="800" ry="60" fill="none" stroke="#5db8d8" stroke-width="1.5" opacity="0.4">
+        <animate attributeName="ry" values="60;90;60" dur="4s" repeatCount="indefinite"/>
+        <animate attributeName="opacity" values="0.4;0.2;0.4" dur="4s" repeatCount="indefinite"/>
+      </ellipse>
+      <ellipse cx="600" cy="250" rx="600" ry="40" fill="none" stroke="#5db8d8" stroke-width="1.5" opacity="0.5">
+        <animate attributeName="ry" values="40;70;40" dur="5s" repeatCount="indefinite"/>
+        <animate attributeName="opacity" values="0.5;0.25;0.5" dur="5s" repeatCount="indefinite"/>
+      </ellipse>
+      <ellipse cx="600" cy="250" rx="400" ry="25" fill="none" stroke="#4fdfe8" stroke-width="1.5" opacity="0.6">
+        <animate attributeName="ry" values="25;55;25" dur="3s" repeatCount="indefinite"/>
+        <animate attributeName="opacity" values="0.6;0.3;0.6" dur="3s" repeatCount="indefinite"/>
+      </ellipse>
+    </g>
+  </svg>
+  <div class="hero-content">
+    <div class="hero-eyebrow">A Data Story · The Global Water Crisis</div>
+    <h1 class="hero-title">Dying of <em>Thirst</em></h1>
+    <p class="hero-subtitle">2.2 billion people don't have safe water right now. This is their story — and ours.</p>
+    <div class="hero-stat-row">
+      <div class="hero-stat">
+        <div class="num">2.2B</div>
+        <div class="label">People affected</div>
+      </div>
+      <div class="hero-stat">
+        <div class="num">3.5B</div>
+        <div class="label">In water-stressed nations</div>
+      </div>
+      <div class="hero-stat">
+        <div class="num">1.4M</div>
+        <div class="label">Deaths each year</div>
+      </div>
+      <div class="hero-stat">
+        <div class="num">2050</div>
+        <div class="label">The breaking point</div>
+      </div>
+    </div>
+  </div>
+  <div class="scroll-cue">
+    <span>Scroll to explore the data</span>
+    <div class="scroll-arrow"></div>
+  </div>
+</section>
+
+<!-- SECTION 1: ACCESS -->
+<section id="access">
+  <div class="section-inner">
+    <div class="section-label">Chapter 01 — The Access Gap</div>
+    <h2 class="section-title">Where Water Still Fails Millions</h2>
+    <div class="two-col">
+      <div class="text-side">
+        <p class="section-prose">
+          If you're reading this, you probably turned on a tap this morning without thinking twice. <strong>Try imagining a world where you couldn't.</strong> For 2.2 billion people, that's not imagination — it's daily life.
+        </p>
+        <p class="section-prose">
+          In Sub-Saharan Africa, the crisis is concentrated: 18 of the 20 countries with the worst water access are here. South Sudan (38.7%), Somalia (46.3%), and Chad (46.1%) have left more than half their populations with no safe drinking water.
+        </p>
+        <div class="pullquote">"Water is life. Without it, everything else is impossible."</div>
+        <p class="section-prose">
+          But here's what's striking: <strong>some African nations prove it's achievable</strong>. South Africa reached 89.9%, Algeria 82.4%. The gap isn't about climate or geography — it's about choices. Political will. Investment. Infrastructure. The nations with safe water chose to build it.
+        </p>
+      </div>
+      <div>
+        <div class="chart-card" id="access-chart-card">
+          <div class="chart-title">The 20 Countries Worst Off</div>
+          <div id="access-chart"></div>
+        </div>
+      </div>
+    </div>
+    <div class="chart-card" id="access-map-card" style="margin-top:3rem;">
+      <div class="chart-title">Global Water Access — Mapped by Country</div>
+      <div class="world-map-container" id="world-map"></div>
+      <div class="map-legend" id="map-legend"></div>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION 2: WATER STRESS -->
+<section id="stress">
+  <div class="section-inner">
+    <div class="section-label">Chapter 02 — Living on the Edge</div>
+    <h2 class="section-title">When There's Not Enough to Go Around</h2>
+    <p class="section-prose">
+      Water stress happens when a country is drawing more water than it has. It sounds abstract until you think about it: <strong>once you've taken all the water available, where does the next person's glass come from?</strong>
+    </p>
+    <p class="section-prose">
+      The Middle East is in crisis. Egypt, Jordan, Saudi Arabia, Libya — wealthy nations with high living standards, yet <em>extremely high water stress</em>. They've solved the problem by drilling deeper and deeper into aquifers that filled up 10,000 years ago. They're living on borrowed water. When it runs out — and it will — there's no backup plan.
+    </p>
+    <div class="chart-card" id="stress-chart-card">
+      <div class="chart-title">GDP vs Water Access by Stress Level</div>
+      <div id="stress-chart"></div>
+    </div>
+    <div class="chart-card" id="stress-bar-card" style="margin-top:2rem;">
+      <div class="chart-title">How Many Countries Face Each Level of Stress?</div>
+      <div id="stress-bar-chart"></div>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION 3: MORTALITY -->
+<section id="mortality">
+  <div class="section-inner">
+    <div class="section-label">Chapter 03 — The Hidden Killer</div>
+    <h2 class="section-title">Unsafe Water Kills More Than Floods, Earthquakes & Warfare Combined</h2>
+    <div class="two-col">
+      <div class="text-side">
+        <p class="section-prose">
+          We've all heard about pandemics and wars. But there's a crisis that barely makes headlines: <strong>contaminated water kills 1.4 million people every year</strong> — mostly children. It's cholera, dysentery, typhoid — diseases that vanished from wealthy nations a century ago.
+        </p>
+        <p class="section-prose">
+          In Niger, South Sudan, and Somalia, more than 40 out of every 100,000 people die annually from drinking unsafe water. Do the math: that's a Hiroshima's worth of deaths every single year, every year, in countries the world has largely forgotten.
+        </p>
+        <div class="pullquote">"Every 90 seconds, another child dies from a waterborne disease."</div>
+        <p class="section-prose">
+          The cruelest part? There's a perfect correlation. <strong>The poorer a nation, the deadlier its water.</strong> This creates a trap: sick people can't work, can't earn, can't invest in infrastructure to fix the water. It's a poverty machine with water at its core.
+        </p>
+      </div>
+      <div>
+        <div class="chart-card" id="mortality-chart-card">
+          <div class="chart-title">Water Access vs Mortality (bubble size = population)</div>
+          <div id="mortality-chart"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION 4: GROUNDWATER -->
+<section id="groundwater">
+  <div class="section-inner">
+    <div class="section-label">Chapter 04 — The Irreversible Crisis</div>
+    <h2 class="section-title">We're Draining Aquifers That Won't Refill for 10,000 Years</h2>
+    <p class="section-prose">
+      Here's a fact that should terrify us: <strong>groundwater is being extracted 3 times faster than it can recharge</strong> in the world's most stressed regions. And groundwater is different from rain — it refills slowly, glacially. The aquifers we're draining now accumulated over millennia.
+    </p>
+    <p class="section-prose">
+      Saudi Arabia, Libya, Egypt, Pakistan, India — these nations are in a race against hydrology. When the aquifers empty, there's no backup. No Plan B. <em>The well just runs dry.</em>
+    </p>
+    <div class="chart-card" id="gw-chart-card">
+      <div class="chart-title">Groundwater Depletion vs Drought Risk by Region</div>
+      <div id="gw-chart"></div>
+    </div>
+    <div class="chart-card" id="gw-bar-card" style="margin-top:2rem;">
+      <div class="chart-title">The Top 15 Countries Draining Their Aquifers Fastest</div>
+      <div id="gw-bar-chart"></div>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION 5: INTERACTIVE EXPLORER -->
+<section id="explorer">
+  <div class="section-inner">
+    <div class="section-label">Chapter 05 — You're the Analyst Now</div>
+    <h2 class="section-title">Find Your Own Pattern</h2>
+    <p class="section-prose">
+      We've shown you our story. Now find yours. Pick any two variables from the dataset and see what the data reveals. What pattern matters to you?
+    </p>
+    <div class="explorer-controls">
+      <div class="ctrl-group">
+        <label>X Axis (horizontal)</label>
+        <select id="x-axis">
+          <option value="gdp_per_capita_usd">💰 GDP per Capita</option>
+          <option value="access_safe_water_pct">💧 Water Access %</option>
+          <option value="annual_rainfall_mm">🌧 Annual Rainfall</option>
+          <option value="groundwater_depletion_rate">⚠ Groundwater Depletion</option>
+          <option value="drought_frequency_index">🏜 Drought Risk</option>
+        </select>
+      </div>
+      <div class="ctrl-group">
+        <label>Y Axis (vertical)</label>
+        <select id="y-axis">
+          <option value="deaths_per_100k_unsafe_water">☠️ Deaths per 100k</option>
+          <option value="access_safe_water_pct">💧 Water Access %</option>
+          <option value="freshwater_withdrawal_km3">🌊 Water Usage</option>
+          <option value="groundwater_depletion_rate">⚠ Groundwater Depletion</option>
+          <option value="access_sanitation_pct">🚽 Sanitation Access %</option>
+        </select>
+      </div>
+      <div class="ctrl-group">
+        <label>Color By</label>
+        <select id="color-by">
+          <option value="region">🌍 Region</option>
+          <option value="water_stress_level">💔 Water Stress Level</option>
+        </select>
+      </div>
+    </div>
+    <div class="chart-card" id="explorer-card" style="opacity:1;transform:none;">
+      <div class="explorer-chart-wrap" id="explorer-chart"></div>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION 6: OUTLOOK -->
+<section id="outlook">
+  <div class="section-inner">
+    <div class="section-label">Chapter 06 — The Choice Is Now</div>
+    <h2 class="section-title">Crisis or Opportunity?</h2>
+    <p class="section-prose">
+      The data is clear: we have a problem. But data isn't destiny. <strong>Every wealthy nation that has tackled this has won.</strong> Germany, Canada, the UK — they chose to build water infrastructure, and now their citizens take it for granted. But that infrastructure took investment, political will, and time.
+    </p>
+    <p class="section-prose">
+      We still have time to make different choices. Here's what the data says about what happens next:
+    </p>
+    <div class="outlook-grid">
+      <div class="outlook-card bad">
+        <div class="outlook-num bad">4 Billion</div>
+        <div class="outlook-label">At Critical Risk by 2050</div>
+        <div class="outlook-desc">Nearly half of all humanity will face severe water scarcity at least one month per year. That's not a statistic — that's a migration crisis, a famine crisis, a conflict crisis.</div>
+      </div>
+      <div class="outlook-card warn">
+        <div class="outlook-num warn">40%</div>
+        <div class="outlook-label">Demand Surge Expected by 2030</div>
+        <div class="outlook-desc">Water demand will jump 40% while climate change shrinks the supply. The math doesn't work. Not without action.</div>
+      </div>
+      <div class="outlook-card warn">
+        <div class="outlook-num warn">$114B</div>
+        <div class="outlook-label">Annual Investment Needed</div>
+        <div class="outlook-desc">The UN says we need $114 billion per year through 2030 to achieve safe water for everyone. For context: the world spends $2.4 trillion on fossil fuels annually.</div>
+      </div>
+      <div class="outlook-card ok">
+        <div class="outlook-num ok">2030</div>
+        <div class="outlook-label">The SDG 6 Deadline</div>
+        <div class="outlook-desc">Universal safe water by 2030. We're only 4 years away. It's ambitious, it's expensive, but it's absolutely achievable if we start now.</div>
+      </div>
+    </div>
+
+    <div class="chart-card" id="outlook-chart-card" style="margin-top:3rem;">
+      <div class="chart-title">Regional Picture: Water Access vs Mortality</div>
+      <div id="outlook-chart"></div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-title">Dying of Thirst — The Global Water Crisis</div>
+    <div class="footer-meta">
+      <p><strong>Data Visualization Project</strong> · Information Visualization Course · May 2026</p>
+      <p style="margin-top:0.8rem;"><strong>Team</strong><br>
+        Abdul Rehman Faisal (2023901) · Batool Fatima (2023159)
+      </p>
+      <p style="margin-top:0.8rem;"><strong>Data Sources</strong><br>
+        WHO/UNICEF Joint Monitoring Programme · FAO AQUASTAT · World Bank · WRI Aqueduct
+      </p>
+      <p style="margin-top:0.8rem;"><strong>Built With</strong><br>
+        <a href="https://d3js.org" target="_blank">D3.js v7</a> · <a href="https://vis-society.github.io/" target="_blank">MIT Visualization Society</a> · Pure HTML/CSS/JS
+      </p>
+      <p style="margin-top:1rem; color: rgba(237, 232, 224, 0.25); font-size: 0.7rem;">Submitted May 10, 2026 · Data visualization teaches empathy through evidence</p>
+    </div>
+  </div>
+</footer>
+
+<script>
+// ═══════════════════════════════════════════════════
+// DATA (COMPLETE)
+// ═══════════════════════════════════════════════════
+const DATA = [
+  {country:"Afghanistan",region:"South Asia",access_safe_water_pct:54.2,access_sanitation_pct:37.8,water_stress_level:"high",annual_rainfall_mm:327,gdp_per_capita_usd:500,population_millions:42.3,deaths_per_100k_unsafe_water:32.4,freshwater_withdrawal_km3:21.3,groundwater_depletion_rate:0.34,drought_frequency_index:0.71},
+  {country:"Angola",region:"Sub-Saharan Africa",access_safe_water_pct:55.1,access_sanitation_pct:52.3,water_stress_level:"low",annual_rainfall_mm:1010,gdp_per_capita_usd:2200,population_millions:35.9,deaths_per_100k_unsafe_water:28.4,freshwater_withdrawal_km3:0.35,groundwater_depletion_rate:0.08,drought_frequency_index:0.38},
+  {country:"Australia",region:"Oceania",access_safe_water_pct:99.6,access_sanitation_pct:100,water_stress_level:"high",annual_rainfall_mm:534,gdp_per_capita_usd:55000,population_millions:26.4,deaths_per_100k_unsafe_water:0.4,freshwater_withdrawal_km3:19.3,groundwater_depletion_rate:0.07,drought_frequency_index:0.52},
+  {country:"Bangladesh",region:"South Asia",access_safe_water_pct:97.7,access_sanitation_pct:59.3,water_stress_level:"high",annual_rainfall_mm:2318,gdp_per_capita_usd:2500,population_millions:169.4,deaths_per_100k_unsafe_water:12.1,freshwater_withdrawal_km3:35.9,groundwater_depletion_rate:0.43,drought_frequency_index:0.44},
+  {country:"Brazil",region:"South America",access_safe_water_pct:97.7,access_sanitation_pct:88.4,water_stress_level:"medium",annual_rainfall_mm:1782,gdp_per_capita_usd:8800,population_millions:215.3,deaths_per_100k_unsafe_water:5.4,freshwater_withdrawal_km3:74.8,groundwater_depletion_rate:0.09,drought_frequency_index:0.33},
+  {country:"Cameroon",region:"Sub-Saharan Africa",access_safe_water_pct:58.2,access_sanitation_pct:37.4,water_stress_level:"medium",annual_rainfall_mm:1604,gdp_per_capita_usd:1600,population_millions:27.2,deaths_per_100k_unsafe_water:22.1,freshwater_withdrawal_km3:0.97,groundwater_depletion_rate:0.08,drought_frequency_index:0.32},
+  {country:"Canada",region:"North America",access_safe_water_pct:99.8,access_sanitation_pct:100,water_stress_level:"low",annual_rainfall_mm:537,gdp_per_capita_usd:52000,population_millions:38.2,deaths_per_100k_unsafe_water:0.2,freshwater_withdrawal_km3:42.2,groundwater_depletion_rate:0.04,drought_frequency_index:0.22},
+  {country:"Central African Republic",region:"Sub-Saharan Africa",access_safe_water_pct:43.8,access_sanitation_pct:26.2,water_stress_level:"low",annual_rainfall_mm:1343,gdp_per_capita_usd:500,population_millions:5.5,deaths_per_100k_unsafe_water:38.7,freshwater_withdrawal_km3:0.07,groundwater_depletion_rate:0.04,drought_frequency_index:0.29},
+  {country:"Chad",region:"Sub-Saharan Africa",access_safe_water_pct:46.1,access_sanitation_pct:12.2,water_stress_level:"high",annual_rainfall_mm:322,gdp_per_capita_usd:700,population_millions:17.4,deaths_per_100k_unsafe_water:42.3,freshwater_withdrawal_km3:1.89,groundwater_depletion_rate:0.18,drought_frequency_index:0.78},
+  {country:"China",region:"East Asia",access_safe_water_pct:95.1,access_sanitation_pct:72.8,water_stress_level:"high",annual_rainfall_mm:645,gdp_per_capita_usd:12700,population_millions:1412,deaths_per_100k_unsafe_water:5.3,freshwater_withdrawal_km3:591.8,groundwater_depletion_rate:0.45,drought_frequency_index:0.54},
+  {country:"Egypt",region:"North Africa",access_safe_water_pct:98.5,access_sanitation_pct:95.3,water_stress_level:"extremely_high",annual_rainfall_mm:51,gdp_per_capita_usd:3700,population_millions:105.1,deaths_per_100k_unsafe_water:4.2,freshwater_withdrawal_km3:77.5,groundwater_depletion_rate:0.62,drought_frequency_index:0.87},
+  {country:"Ethiopia",region:"Sub-Saharan Africa",access_safe_water_pct:57.4,access_sanitation_pct:7.8,water_stress_level:"high",annual_rainfall_mm:848,gdp_per_capita_usd:1000,population_millions:126.5,deaths_per_100k_unsafe_water:40.1,freshwater_withdrawal_km3:5.56,groundwater_depletion_rate:0.12,drought_frequency_index:0.55},
+  {country:"France",region:"Europe",access_safe_water_pct:99.9,access_sanitation_pct:99.2,water_stress_level:"medium",annual_rainfall_mm:867,gdp_per_capita_usd:43000,population_millions:67.7,deaths_per_100k_unsafe_water:0.3,freshwater_withdrawal_km3:33,groundwater_depletion_rate:0.03,drought_frequency_index:0.23},
+  {country:"Germany",region:"Europe",access_safe_water_pct:100,access_sanitation_pct:99.4,water_stress_level:"medium",annual_rainfall_mm:700,gdp_per_capita_usd:48000,population_millions:83.2,deaths_per_100k_unsafe_water:0.1,freshwater_withdrawal_km3:32.3,groundwater_depletion_rate:0.02,drought_frequency_index:0.18},
+  {country:"Ghana",region:"Sub-Saharan Africa",access_safe_water_pct:79.3,access_sanitation_pct:18.3,water_stress_level:"medium",annual_rainfall_mm:1187,gdp_per_capita_usd:2500,population_millions:32.4,deaths_per_100k_unsafe_water:14.2,freshwater_withdrawal_km3:0.31,groundwater_depletion_rate:0.04,drought_frequency_index:0.37},
+  {country:"Haiti",region:"Caribbean",access_safe_water_pct:58.8,access_sanitation_pct:35.1,water_stress_level:"medium",annual_rainfall_mm:1440,gdp_per_capita_usd:1200,population_millions:11.5,deaths_per_100k_unsafe_water:31.2,freshwater_withdrawal_km3:1.2,groundwater_depletion_rate:0.08,drought_frequency_index:0.48},
+  {country:"India",region:"South Asia",access_safe_water_pct:89.9,access_sanitation_pct:60.4,water_stress_level:"extremely_high",annual_rainfall_mm:1083,gdp_per_capita_usd:2500,population_millions:1428.6,deaths_per_100k_unsafe_water:15.4,freshwater_withdrawal_km3:761,groundwater_depletion_rate:0.56,drought_frequency_index:0.61},
+  {country:"Indonesia",region:"Southeast Asia",access_safe_water_pct:87.6,access_sanitation_pct:75.7,water_stress_level:"medium",annual_rainfall_mm:2702,gdp_per_capita_usd:4600,population_millions:277.5,deaths_per_100k_unsafe_water:9.8,freshwater_withdrawal_km3:222,groundwater_depletion_rate:0.12,drought_frequency_index:0.38},
+  {country:"Iran",region:"Middle East",access_safe_water_pct:96.4,access_sanitation_pct:88.9,water_stress_level:"high",annual_rainfall_mm:228,gdp_per_capita_usd:5600,population_millions:88.6,deaths_per_100k_unsafe_water:7.8,freshwater_withdrawal_km3:93.3,groundwater_depletion_rate:0.41,drought_frequency_index:0.68},
+  {country:"Iraq",region:"Middle East",access_safe_water_pct:86.6,access_sanitation_pct:86.2,water_stress_level:"extremely_high",annual_rainfall_mm:216,gdp_per_capita_usd:5400,population_millions:42.3,deaths_per_100k_unsafe_water:12.4,freshwater_withdrawal_km3:66,groundwater_depletion_rate:0.38,drought_frequency_index:0.74},
+  {country:"Jordan",region:"Middle East",access_safe_water_pct:97.5,access_sanitation_pct:98.6,water_stress_level:"extremely_high",annual_rainfall_mm:111,gdp_per_capita_usd:4100,population_millions:10.2,deaths_per_100k_unsafe_water:3.1,freshwater_withdrawal_km3:0.94,groundwater_depletion_rate:0.55,drought_frequency_index:0.82},
+  {country:"Kazakhstan",region:"Central Asia",access_safe_water_pct:93.9,access_sanitation_pct:98.3,water_stress_level:"high",annual_rainfall_mm:250,gdp_per_capita_usd:9800,population_millions:19.1,deaths_per_100k_unsafe_water:4.3,freshwater_withdrawal_km3:21.1,groundwater_depletion_rate:0.31,drought_frequency_index:0.58},
+  {country:"Kenya",region:"Sub-Saharan Africa",access_safe_water_pct:59.4,access_sanitation_pct:30.4,water_stress_level:"high",annual_rainfall_mm:630,gdp_per_capita_usd:2100,population_millions:54,deaths_per_100k_unsafe_water:28.4,freshwater_withdrawal_km3:5.29,groundwater_depletion_rate:0.22,drought_frequency_index:0.54},
+  {country:"Libya",region:"North Africa",access_safe_water_pct:97.1,access_sanitation_pct:96.8,water_stress_level:"extremely_high",annual_rainfall_mm:56,gdp_per_capita_usd:7800,population_millions:7.1,deaths_per_100k_unsafe_water:5.8,freshwater_withdrawal_km3:4.8,groundwater_depletion_rate:0.68,drought_frequency_index:0.85},
+  {country:"Madagascar",region:"Sub-Saharan Africa",access_safe_water_pct:52.7,access_sanitation_pct:13.7,water_stress_level:"medium",annual_rainfall_mm:1513,gdp_per_capita_usd:500,population_millions:28.9,deaths_per_100k_unsafe_water:36.8,freshwater_withdrawal_km3:16.5,groundwater_depletion_rate:0.07,drought_frequency_index:0.39},
+  {country:"Mali",region:"Sub-Saharan Africa",access_safe_water_pct:76.4,access_sanitation_pct:28.3,water_stress_level:"high",annual_rainfall_mm:282,gdp_per_capita_usd:900,population_millions:22.4,deaths_per_100k_unsafe_water:31.4,freshwater_withdrawal_km3:6.63,groundwater_depletion_rate:0.15,drought_frequency_index:0.69},
+  {country:"Mexico",region:"North America",access_safe_water_pct:96.5,access_sanitation_pct:88.5,water_stress_level:"high",annual_rainfall_mm:752,gdp_per_capita_usd:10000,population_millions:128.5,deaths_per_100k_unsafe_water:5.2,freshwater_withdrawal_km3:91.2,groundwater_depletion_rate:0.28,drought_frequency_index:0.49},
+  {country:"Mozambique",region:"Sub-Saharan Africa",access_safe_water_pct:49,access_sanitation_pct:22.5,water_stress_level:"low",annual_rainfall_mm:1032,gdp_per_capita_usd:500,population_millions:32.8,deaths_per_100k_unsafe_water:38.9,freshwater_withdrawal_km3:0.68,groundwater_depletion_rate:0.05,drought_frequency_index:0.41},
+  {country:"Niger",region:"Sub-Saharan Africa",access_safe_water_pct:60.7,access_sanitation_pct:14,water_stress_level:"high",annual_rainfall_mm:151,gdp_per_capita_usd:600,population_millions:25.7,deaths_per_100k_unsafe_water:44.2,freshwater_withdrawal_km3:2.18,groundwater_depletion_rate:0.16,drought_frequency_index:0.72},
+  {country:"Nigeria",region:"Sub-Saharan Africa",access_safe_water_pct:71.6,access_sanitation_pct:45.3,water_stress_level:"medium",annual_rainfall_mm:1150,gdp_per_capita_usd:2100,population_millions:218.5,deaths_per_100k_unsafe_water:22.4,freshwater_withdrawal_km3:13.1,groundwater_depletion_rate:0.11,drought_frequency_index:0.44},
+  {country:"Pakistan",region:"South Asia",access_safe_water_pct:91.4,access_sanitation_pct:64.2,water_stress_level:"extremely_high",annual_rainfall_mm:494,gdp_per_capita_usd:1600,population_millions:231.4,deaths_per_100k_unsafe_water:15.6,freshwater_withdrawal_km3:183.5,groundwater_depletion_rate:0.51,drought_frequency_index:0.67},
+  {country:"Russia",region:"Europe",access_safe_water_pct:97.8,access_sanitation_pct:72,water_stress_level:"low",annual_rainfall_mm:530,gdp_per_capita_usd:11600,population_millions:143.4,deaths_per_100k_unsafe_water:2.8,freshwater_withdrawal_km3:66.2,groundwater_depletion_rate:0.07,drought_frequency_index:0.28},
+  {country:"Saudi Arabia",region:"Middle East",access_safe_water_pct:97.3,access_sanitation_pct:100,water_stress_level:"extremely_high",annual_rainfall_mm:59,gdp_per_capita_usd:23000,population_millions:36.4,deaths_per_100k_unsafe_water:1.8,freshwater_withdrawal_km3:23.7,groundwater_depletion_rate:0.71,drought_frequency_index:0.89},
+  {country:"Somalia",region:"Sub-Saharan Africa",access_safe_water_pct:46.3,access_sanitation_pct:24.8,water_stress_level:"high",annual_rainfall_mm:282,gdp_per_capita_usd:400,population_millions:17.1,deaths_per_100k_unsafe_water:41.5,freshwater_withdrawal_km3:3.29,groundwater_depletion_rate:0.17,drought_frequency_index:0.73},
+  {country:"South Africa",region:"Sub-Saharan Africa",access_safe_water_pct:89.9,access_sanitation_pct:74.8,water_stress_level:"high",annual_rainfall_mm:495,gdp_per_capita_usd:6700,population_millions:59.4,deaths_per_100k_unsafe_water:8.9,freshwater_withdrawal_km3:12.5,groundwater_depletion_rate:0.24,drought_frequency_index:0.52},
+  {country:"South Sudan",region:"Sub-Saharan Africa",access_safe_water_pct:38.7,access_sanitation_pct:8.2,water_stress_level:"medium",annual_rainfall_mm:900,gdp_per_capita_usd:400,population_millions:11.1,deaths_per_100k_unsafe_water:45.8,freshwater_withdrawal_km3:0.41,groundwater_depletion_rate:0.06,drought_frequency_index:0.42},
+  {country:"Sudan",region:"North Africa",access_safe_water_pct:66.5,access_sanitation_pct:33.2,water_stress_level:"high",annual_rainfall_mm:416,gdp_per_capita_usd:800,population_millions:46.1,deaths_per_100k_unsafe_water:34.6,freshwater_withdrawal_km3:3.93,groundwater_depletion_rate:0.24,drought_frequency_index:0.66},
+  {country:"Tanzania",region:"Sub-Saharan Africa",access_safe_water_pct:56.3,access_sanitation_pct:25.3,water_stress_level:"medium",annual_rainfall_mm:1071,gdp_per_capita_usd:1200,population_millions:63.7,deaths_per_100k_unsafe_water:31.2,freshwater_withdrawal_km3:5.6,groundwater_depletion_rate:0.09,drought_frequency_index:0.43},
+  {country:"Turkey",region:"Middle East",access_safe_water_pct:96.8,access_sanitation_pct:98.3,water_stress_level:"high",annual_rainfall_mm:593,gdp_per_capita_usd:9100,population_millions:85.3,deaths_per_100k_unsafe_water:4.4,freshwater_withdrawal_km3:40.1,groundwater_depletion_rate:0.28,drought_frequency_index:0.53},
+  {country:"Uganda",region:"Sub-Saharan Africa",access_safe_water_pct:71.7,access_sanitation_pct:19.1,water_stress_level:"low",annual_rainfall_mm:1180,gdp_per_capita_usd:900,population_millions:47.2,deaths_per_100k_unsafe_water:28.7,freshwater_withdrawal_km3:0.63,groundwater_depletion_rate:0.07,drought_frequency_index:0.32},
+  {country:"United States",region:"North America",access_safe_water_pct:99.2,access_sanitation_pct:100,water_stress_level:"medium",annual_rainfall_mm:715,gdp_per_capita_usd:63000,population_millions:335.9,deaths_per_100k_unsafe_water:0.4,freshwater_withdrawal_km3:444.7,groundwater_depletion_rate:0.12,drought_frequency_index:0.34},
+  {country:"Uzbekistan",region:"Central Asia",access_safe_water_pct:96.2,access_sanitation_pct:100,water_stress_level:"extremely_high",annual_rainfall_mm:206,gdp_per_capita_usd:2200,population_millions:35.3,deaths_per_100k_unsafe_water:3.8,freshwater_withdrawal_km3:56,groundwater_depletion_rate:0.48,drought_frequency_index:0.76},
+  {country:"Yemen",region:"Middle East",access_safe_water_pct:53.8,access_sanitation_pct:56.4,water_stress_level:"extremely_high",annual_rainfall_mm:167,gdp_per_capita_usd:500,population_millions:33.7,deaths_per_100k_unsafe_water:36.8,freshwater_withdrawal_km3:3.4,groundwater_depletion_rate:0.58,drought_frequency_index:0.84},
+  {country:"Zimbabwe",region:"Sub-Saharan Africa",access_safe_water_pct:67,access_sanitation_pct:36.7,water_stress_level:"high",annual_rainfall_mm:657,gdp_per_capita_usd:1500,population_millions:15.9,deaths_per_100k_unsafe_water:19.8,freshwater_withdrawal_km3:4.21,groundwater_depletion_rate:0.12,drought_frequency_index:0.48},
+];
+
+const REGION_COLORS = {
+  "Sub-Saharan Africa": "#d97a3a",
+  "South Asia": "#a878c0",
+  "Middle East": "#d46a4a",
+  "North Africa": "#e09a38",
+  "Southeast Asia": "#38a066",
+  "East Asia": "#3a9fd6",
+  "Europe": "#3ec878",
+  "North America": "#18b8ba",
+  "South America": "#1a9a88",
+  "Central Asia": "#9860ba",
+  "Oceania": "#3878d0",
+  "Caribbean": "#e88080",
+  "Europe/Asia": "#18c8d6",
+  "Central America": "#ff7030",
+};
+
+const STRESS_COLORS = {
+  "extremely_high": "#b84545",
+  "high": "#d46a2a",
+  "medium": "#d4a938",
+  "low": "#3d8f62",
+};
+
+// ═══════════════════════════════════════════════════
+// SCROLL UTILS
+// ═══════════════════════════════════════════════════
+const nav = document.getElementById('sticky-nav');
+const progressBar = document.getElementById('progress-bar');
+
+function onScroll() {
+  const scrollY = window.scrollY;
+  const docH = document.documentElement.scrollHeight - window.innerHeight;
+  progressBar.style.width = (scrollY / docH * 100) + '%';
+
+  const heroH = document.getElementById('hero').offsetHeight;
+  nav.classList.toggle('visible', scrollY > heroH * 0.5);
+
+  const sections = ['access','stress','mortality','groundwater','explorer','outlook'];
+  let active = '';
+  for (const id of sections) {
+    const el = document.getElementById(id);
+    if (el && el.getBoundingClientRect().top < window.innerHeight * 0.5) active = id;
+  }
+  document.querySelectorAll('.nav-links a').forEach(a => {
+    a.classList.toggle('active', a.getAttribute('href') === '#' + active);
+  });
+}
+
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) e.target.classList.add('visible');
+  });
+}, { threshold: 0.15 });
+
+document.querySelectorAll('.section-label,.section-title,.section-prose,.chart-card,.pullquote,.outlook-card').forEach(el => {
+  observer.observe(el);
+});
+
+window.addEventListener('scroll', onScroll, { passive: true });
+onScroll();
+
+// ═══════════════════════════════════════════════════
+// TOOLTIP
+// ═══════════════════════════════════════════════════
+const tip = document.getElementById('tooltip');
+
+function showTip(html, event) {
+  tip.innerHTML = html;
+  tip.classList.add('show');
+  moveTip(event);
+}
+
+function moveTip(event) {
+  let x = event.clientX + 16;
+  let y = event.clientY - 10;
+  if (x + 260 > window.innerWidth) x = event.clientX - 260;
+  tip.style.left = x + 'px';
+  tip.style.top = y + 'px';
+}
+
+function hideTip() { tip.classList.remove('show'); }
+
+// ═══════════════════════════════════════════════════
+// CHART 1: ACCESS BAR CHART
+// ═══════════════════════════════════════════════════
+function buildAccessChart() {
+  const bottom = [...DATA].sort((a,b) => a.access_safe_water_pct - b.access_safe_water_pct).slice(0,20);
+  const container = document.getElementById('access-chart');
+  if (!container) return;
+  
+  const W = container.clientWidth || 500;
+  const margin = {top:10, right:20, bottom:10, left:160};
+  const H = bottom.length * 26;
+  const width = W - margin.left - margin.right;
+  const height = H;
+
+  const svg = d3.select(container).append('svg')
+    .attr('width', W).attr('height', H + margin.top + margin.bottom);
+
+  const g = svg.append('g').attr('transform', `translate(${margin.left},${margin.top})`);
+
+  const x = d3.scaleLinear().domain([0, 100]).range([0, width]);
+  const y = d3.scaleBand().domain(bottom.map(d=>d.country)).range([0,height]).padding(0.3);
+
+  g.append('g').attr('class','grid')
+    .call(d3.axisBottom(x).ticks(5).tickSize(height).tickFormat(''))
+    .attr('transform','translate(0,0)');
+
+  bottom.forEach((d, i) => {
+    const pct = d.access_safe_water_pct;
+    const color = pct < 50 ? '#b84545' : pct < 65 ? '#d46a2a' : '#d4a938';
+    
+    g.append('rect')
+      .attr('class','bar')
+      .attr('x', 0).attr('y', y(d.country))
+      .attr('width', 0).attr('height', y.bandwidth())
+      .attr('fill', color).attr('rx', 3)
+      .on('mousemove', (ev) => showTip(`<strong>${d.country}</strong>Safe water: ${d.access_safe_water_pct}%<br>Region: ${d.region}<br>GDP/cap: $${d.gdp_per_capita_usd}`, ev))
+      .on('mouseleave', hideTip)
+      .transition().duration(700).delay(i * 25)
+      .attr('width', x(d.access_safe_water_pct));
+
+    g.append('text')
+      .attr('x', -6).attr('y', y(d.country) + y.bandwidth() / 2)
+      .attr('dy', '0.35em').attr('text-anchor', 'end')
+      .attr('font-family', "'Inter', sans-serif").attr('font-size', 11)
+      .attr('fill', 'rgba(237,232,224,0.75)').text(d.country);
+
+    g.append('text')
+      .attr('x', x(d.access_safe_water_pct) + 4)
+      .attr('y', y(d.country) + y.bandwidth() / 2)
+      .attr('dy', '0.35em')
+      .attr('font-family', "'Inter', sans-serif").attr('font-size', 10)
+      .attr('fill', 'rgba(237,232,224,0.5)').text(d.access_safe_water_pct + '%');
+  });
+
+  g.append('g').attr('class','axis')
+    .attr('transform', `translate(0,${height})`)
+    .call(d3.axisBottom(x).ticks(5).tickFormat(d => d + '%'));
+}
+
+// ═══════════════════════════════════════════════════
+// CHART 2: WORLD MAP
+// ═══════════════════════════════════════════════════
+function buildWorldMap() {
+  const container = document.getElementById('world-map');
+  if (!container) return;
+  
+  const W = container.clientWidth || 900;
+  const H = W * 0.5;
+
+  const color = d3.scaleQuantize()
+    .domain([35, 100])
+    .range(['#b84545','#d46a2a','#d4a938','#3d8f62','#1b7fa0','#0e3a4f']);
+
+  const svg = d3.select(container).append('svg')
+    .attr('width', W).attr('height', H).attr('viewBox', `0 0 ${W} ${H}`);
+
+  const projection = d3.geoNaturalEarth1()
+    .scale(W / 6.3).translate([W/2, H/2]);
+
+  const path = d3.geoPath().projection(projection);
+
+  svg.append('rect').attr('width', W).attr('height', H).attr('fill', 'none');
+
+  const dataMap = {};
+  DATA.forEach(d => { dataMap[d.country.toLowerCase()] = d; });
+
+  fetch('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json')
+    .then(r => r.json())
+    .then(world => {
+      drawFallbackMap(svg, W, H, color);
+    })
+    .catch(() => drawFallbackMap(svg, W, H, color));
+
+  buildLegend(color);
+}
+
+function drawFallbackMap(svg, W, H, colorScale) {
+  const coords = [
+    {c:"South Sudan",lat:7,lon:30},{c:"Somalia",lat:5,lon:46},{c:"Chad",lat:15,lon:18},
+    {c:"Central African Republic",lat:6,lon:21},{c:"Niger",lat:16,lon:8},{c:"Yemen",lat:15,lon:48},
+    {c:"Afghanistan",lat:34,lon:68},{c:"Mozambique",lat:-18,lon:35},{c:"Madagascar",lat:-20,lon:47},
+    {c:"Angola",lat:-12,lon:18},{c:"Haiti",lat:19,lon:-73},{c:"Ethiopia",lat:9,lon:40},
+    {c:"Tanzania",lat:-6,lon:35},{c:"Uganda",lat:1,lon:32},{c:"Mali",lat:17,lon:-3},
+    {c:"Cameroon",lat:4,lon:12},{c:"Zimbabwe",lat:-20,lon:30},{c:"Kenya",lat:0,lon:37},
+    {c:"Sudan",lat:15,lon:32},{c:"Ghana",lat:8,lon:-2},{c:"Nigeria",lat:10,lon:9},
+    {c:"Bangladesh",lat:23,lon:90},{c:"Pakistan",lat:30,lon:70},{c:"India",lat:20,lon:78},
+    {c:"China",lat:35,lon:105},{c:"Indonesia",lat:-2,lon:118},{c:"Myanmar",lat:18,lon:97},
+    {c:"Cambodia",lat:13,lon:105},{c:"Vietnam",lat:14,lon:108},{c:"Thailand",lat:15,lon:100},
+    {c:"Philippines",lat:12,lon:122},{c:"Egypt",lat:26,lon:30},{c:"Libya",lat:27,lon:17},
+    {c:"Morocco",lat:33,lon:-6},{c:"Algeria",lat:28,lon:2},{c:"Iraq",lat:33,lon:44},
+    {c:"Syria",lat:35,lon:38},{c:"Jordan",lat:31,lon:36},{c:"Iran",lat:33,lon:54},
+    {c:"Saudi Arabia",lat:25,lon:45},{c:"Turkey",lat:39,lon:35},{c:"Kazakhstan",lat:48,lon:68},
+    {c:"Uzbekistan",lat:40,lon:64},{c:"Russia",lat:60,lon:90},{c:"Brazil",lat:-10,lon:-55},
+    {c:"Bolivia",lat:-17,lon:-65},{c:"Peru",lat:-10,lon:-75},{c:"Colombia",lat:4,lon:-73},
+    {c:"Venezuela",lat:8,lon:-66},{c:"Argentina",lat:-35,lon:-65},{c:"Chile",lat:-35,lon:-71},
+    {c:"Mexico",lat:23,lon:-103},{c:"Canada",lat:60,lon:-100},{c:"United States",lat:38,lon:-98},
+    {c:"Germany",lat:51,lon:10},{c:"France",lat:47,lon:2},{c:"Spain",lat:40,lon:-4},
+    {c:"United Kingdom",lat:54,lon:-3},{c:"Ukraine",lat:50,lon:32},
+    {c:"Australia",lat:-26,lon:134},{c:"South Africa",lat:-30,lon:26},{c:"Cuba",lat:22,lon:-80},
+    {c:"Guatemala",lat:15,lon:-91},{c:"Nepal",lat:28,lon:84},{c:"Zambia",lat:-14,lon:26},
+  ];
+
+  const proj = d3.geoNaturalEarth1().scale(W/6.3).translate([W/2, H/2]);
+  const graticule = d3.geoGraticule()();
+  const pathGen = d3.geoPath().projection(proj);
+  
+  svg.append('path').datum(graticule).attr('d', pathGen)
+    .attr('fill','none').attr('stroke','rgba(237,232,224,0.08)').attr('stroke-width', 0.5);
+
+  const dataMap = {};
+  DATA.forEach(d => { dataMap[d.country] = d; });
+
+  coords.forEach(({c, lat, lon}) => {
+    const d = dataMap[c];
+    if (!d) return;
+    const [px, py] = proj([lon, lat]);
+    if (!px || !py) return;
+    const r = Math.sqrt(d.population_millions) * 0.8 + 3;
+    const col = colorScale(d.access_safe_water_pct);
+
+    svg.append('circle')
+      .attr('cx', px).attr('cy', py).attr('r', Math.max(3, r))
+      .attr('fill', col).attr('opacity', 0.85)
+      .attr('stroke', 'rgba(237,232,224,0.25)').attr('stroke-width', 0.5)
+      .attr('cursor','pointer')
+      .on('mousemove', (ev) => showTip(`<strong>${c}</strong>Safe water: ${d.access_safe_water_pct}%<br>Stress: ${d.water_stress_level}<br>Region: ${d.region}`, ev))
+      .on('mouseleave', hideTip)
+      .transition().duration(600).delay(Math.random()*300)
+      .attr('r', Math.max(4, r));
+  });
+}
+
+function buildLegend(colorScale) {
+  const leg = document.getElementById('map-legend');
+  const labels = ['< 50%','50-65%','65-75%','75-85%','85-95%','> 95%'];
+  colorScale.range().forEach((col, i) => {
+    const item = document.createElement('div');
+    item.className = 'legend-item';
+    const sw = document.createElement('div');
+    sw.className = 'legend-swatch';
+    sw.style.background = col;
+    item.appendChild(sw);
+    item.appendChild(document.createTextNode(labels[i] || ''));
+    leg.appendChild(item);
+  });
+}
+
+// ═══════════════════════════════════════════════════
+// CHART 3: WATER STRESS SCATTER
+// ═══════════════════════════════════════════════════
+function buildStressChart() {
+  const container = document.getElementById('stress-chart');
+  if (!container) return;
+  
+  const W = container.clientWidth || 700;
+  const margin = {top:20,right:120,bottom:50,left:70};
+  const width = W - margin.left - margin.right;
+  const height = 350;
+
+  const svg = d3.select(container).append('svg')
+    .attr('width', W).attr('height', height + margin.top + margin.bottom);
+  const g = svg.append('g').attr('transform', `translate(${margin.left},${margin.top})`);
+
+  const x = d3.scaleLog().domain([300, 70000]).range([0, width]);
+  const y = d3.scaleLinear().domain([0, 100]).range([height, 0]);
+  const r = d3.scaleSqrt().domain([0,1500]).range([3,28]);
+
+  g.append('g').attr('class','grid').call(d3.axisLeft(y).ticks(5).tickSize(-width).tickFormat(''));
+  g.append('g').attr('class','axis').attr('transform',`translate(0,${height})`).call(d3.axisBottom(x).ticks(5, '$,'));
+  g.append('g').attr('class','axis').call(d3.axisLeft(y).ticks(5).tickFormat(d=>d+'%'));
+
+  DATA.forEach((d, i) => {
+    if (d.gdp_per_capita_usd < 300) return;
+    g.append('circle')
+      .attr('class','dot')
+      .attr('cx', x(d.gdp_per_capita_usd))
+      .attr('cy', y(d.access_safe_water_pct))
+      .attr('r', 0)
+      .attr('fill', STRESS_COLORS[d.water_stress_level] || '#888')
+      .attr('opacity', 0.8)
+      .attr('stroke', 'rgba(237,232,224,0.2)').attr('stroke-width', 0.5)
+      .on('mousemove', (ev) => showTip(`<strong>${d.country}</strong>GDP/cap: $${d.gdp_per_capita_usd.toLocaleString()}<br>Safe water: ${d.access_safe_water_pct}%<br>Stress: ${d.water_stress_level}`, ev))
+      .on('mouseleave', hideTip)
+      .transition().duration(700).delay(Math.random()*400)
+      .attr('r', r(d.population_millions));
+  });
+
+  svg.append('text').attr('x', margin.left + width/2).attr('y', height + margin.top + margin.bottom - 6)
+    .attr('text-anchor','middle').attr('font-family',"'Inter',sans-serif").attr('font-size',10)
+    .attr('fill','rgba(237,232,224,0.5)').text('GDP per Capita (USD, log scale)');
+  svg.append('text').attr('transform','rotate(-90)').attr('x', -(margin.top + height/2)).attr('y', 14)
+    .attr('text-anchor','middle').attr('font-family',"'Inter',sans-serif").attr('font-size',10)
+    .attr('fill','rgba(237,232,224,0.5)').text('Safe Water Access (%)');
+
+  const stressLevels = ['extremely_high','high','medium','low'];
+  const stressLabels = ['Extremely High','High','Medium','Low'];
+  const legX = W - margin.right + 10;
+  stressLevels.forEach((s,i) => {
+    const lgy = margin.top + i*22;
+    svg.append('circle').attr('cx', legX + 7).attr('cy', lgy + 7).attr('r', 6)
+      .attr('fill', STRESS_COLORS[s]);
+    svg.append('text').attr('x', legX + 18).attr('y', lgy + 7).attr('dy','0.35em')
+      .attr('font-family',"'Inter',sans-serif").attr('font-size',9)
+      .attr('fill','rgba(237,232,224,0.6)').text(stressLabels[i]);
+  });
+}
+
+// Stress breakdown bar
+function buildStressBreakdown() {
+  const container = document.getElementById('stress-bar-chart');
+  if (!container) return;
+  
+  const stressCounts = {};
+  DATA.forEach(d => { stressCounts[d.water_stress_level] = (stressCounts[d.water_stress_level]||0)+1; });
+  const levels = [
+    {level:'extremely_high',label:'Extremely High',count:stressCounts['extremely_high']||0},
+    {level:'high',label:'High',count:stressCounts['high']||0},
+    {level:'medium',label:'Medium',count:stressCounts['medium']||0},
+    {level:'low',label:'Low',count:stressCounts['low']||0},
+  ];
+
+  const W = container.clientWidth || 600;
+  const margin = {top:10,right:20,bottom:40,left:130};
+  const width = W - margin.left - margin.right;
+  const height = 130;
+
+  const svg = d3.select(container).append('svg')
+    .attr('width',W).attr('height', height + margin.top + margin.bottom);
+  const g = svg.append('g').attr('transform', `translate(${margin.left},${margin.top})`);
+
+  const x = d3.scaleLinear().domain([0, d3.max(levels, d=>d.count)]).range([0, width]);
+  const y = d3.scaleBand().domain(levels.map(d=>d.label)).range([0, height]).padding(0.3);
+
+  g.append('g').attr('class','grid').call(d3.axisBottom(x).ticks(5).tickSize(height).tickFormat('')).attr('transform','translate(0,0)');
+
+  levels.forEach((d, i) => {
+    g.append('rect').attr('class','bar')
+      .attr('x',0).attr('y', y(d.label))
+      .attr('width', 0).attr('height', y.bandwidth())
+      .attr('fill', STRESS_COLORS[d.level]).attr('rx',3)
+      .on('mousemove', (ev) => showTip(`<strong>${d.label} Stress</strong>${d.count} countries`, ev))
+      .on('mouseleave', hideTip)
+      .transition().duration(700).delay(i*80)
+      .attr('width', x(d.count));
+
+    g.append('text').attr('x', -6).attr('y', y(d.label) + y.bandwidth()/2).attr('dy','0.35em')
+      .attr('text-anchor','end').attr('font-family',"'Inter',sans-serif").attr('font-size',11)
+      .attr('fill','rgba(237,232,224,0.75)').text(d.label);
+
+    g.append('text').attr('x', x(d.count)+4).attr('y', y(d.label) + y.bandwidth()/2).attr('dy','0.35em')
+      .attr('font-family',"'Inter',sans-serif").attr('font-size',10)
+      .attr('fill','rgba(237,232,224,0.5)').text(d.count + ' countries');
+  });
+
+  g.append('g').attr('class','axis').attr('transform',`translate(0,${height})`).call(d3.axisBottom(x).ticks(5));
+}
+
+// ═══════════════════════════════════════════════════
+// CHART 4: MORTALITY SCATTER
+// ═══════════════════════════════════════════════════
+function buildMortalityChart() {
+  const container = document.getElementById('mortality-chart');
+  if (!container) return;
+  
+  const W = container.clientWidth || 500;
+  const margin = {top:20,right:20,bottom:50,left:60};
+  const width = W - margin.left - margin.right;
+  const height = 320;
+
+  const svg = d3.select(container).append('svg')
+    .attr('width',W).attr('height', height + margin.top + margin.bottom);
+  const g = svg.append('g').attr('transform',`translate(${margin.left},${margin.top})`);
+
+  const x = d3.scaleLinear().domain([35,101]).range([0,width]);
+  const y = d3.scaleLinear().domain([0, 48]).range([height,0]);
+  const r = d3.scaleSqrt().domain([0,1500]).range([3,22]);
+
+  g.append('g').attr('class','grid').call(d3.axisLeft(y).ticks(5).tickSize(-width).tickFormat(''));
+  g.append('g').attr('class','axis').attr('transform',`translate(0,${height})`).call(d3.axisBottom(x).ticks(5).tickFormat(d=>d+'%'));
+  g.append('g').attr('class','axis').call(d3.axisLeft(y).ticks(6));
+
+  DATA.forEach((d, i) => {
+    g.append('circle').attr('class','dot')
+      .attr('cx', x(d.access_safe_water_pct))
+      .attr('cy', y(d.deaths_per_100k_unsafe_water))
+      .attr('r', 0)
+      .attr('fill', REGION_COLORS[d.region] || '#888')
+      .attr('opacity', 0.85)
+      .attr('stroke','rgba(0,0,0,0.2)').attr('stroke-width',0.5)
+      .on('mousemove', (ev) => showTip(`<strong>${d.country}</strong>Deaths/100k: ${d.deaths_per_100k_unsafe_water}<br>Safe water: ${d.access_safe_water_pct}%<br>Pop: ${d.population_millions}M`, ev))
+      .on('mouseleave', hideTip)
+      .transition().duration(700).delay(Math.random()*500)
+      .attr('r', r(d.population_millions));
+  });
+
+  svg.append('text').attr('x', margin.left + width/2).attr('y', height + margin.top + margin.bottom - 6)
+    .attr('text-anchor','middle').attr('font-family',"'Inter',sans-serif").attr('font-size',10)
+    .attr('fill','rgba(237,232,224,0.5)').text('Safe Water Access (%)');
+  svg.append('text').attr('transform','rotate(-90)').attr('x', -(margin.top + height/2)).attr('y', 14)
+    .attr('text-anchor','middle').attr('font-family',"'Inter',sans-serif").attr('font-size',10)
+    .attr('fill','rgba(237,232,224,0.5)').text('Deaths per 100k');
+}
+
+// ═══════════════════════════════════════════════════
+// CHART 5: GROUNDWATER
+// ═══════════════════════════════════════════════════
+function buildGWScatter() {
+  const container = document.getElementById('gw-chart');
+  if (!container) return;
+  
+  const W = container.clientWidth || 700;
+  const margin = {top:20,right:120,bottom:50,left:60};
+  const width = W - margin.left - margin.right;
+  const height = 320;
+
+  const svg = d3.select(container).append('svg')
+    .attr('width',W).attr('height', height + margin.top + margin.bottom);
+  const g = svg.append('g').attr('transform',`translate(${margin.left},${margin.top})`);
+
+  const x = d3.scaleLinear().domain([0,1]).range([0,width]);
+  const y = d3.scaleLinear().domain([0,1]).range([height,0]);
+
+  g.append('g').attr('class','grid').call(d3.axisLeft(y).ticks(5).tickSize(-width).tickFormat(''));
+  g.append('g').attr('class','axis').attr('transform',`translate(0,${height})`).call(d3.axisBottom(x).ticks(5));
+  g.append('g').attr('class','axis').call(d3.axisLeft(y).ticks(5));
+
+  // Reference lines
+  g.append('line').attr('x1',0).attr('x2',width).attr('y1',y(0.5)).attr('y2',y(0.5))
+    .attr('stroke','rgba(237,232,224,0.1)').attr('stroke-dasharray','4,4');
+  g.append('line').attr('x1',x(0.5)).attr('x2',x(0.5)).attr('y1',0).attr('y2',height)
+    .attr('stroke','rgba(237,232,224,0.1)').attr('stroke-dasharray','4,4');
+
+  DATA.forEach((d, i) => {
+    g.append('circle').attr('class','dot')
+      .attr('cx', x(d.groundwater_depletion_rate))
+      .attr('cy', y(d.drought_frequency_index))
+      .attr('r', 0)
+      .attr('fill', REGION_COLORS[d.region] || '#888')
+      .attr('opacity', 0.85)
+      .attr('stroke','rgba(0,0,0,0.2)').attr('stroke-width',0.5)
+      .on('mousemove', (ev) => showTip(`<strong>${d.country}</strong>GW Depletion: ${d.groundwater_depletion_rate}<br>Drought Index: ${d.drought_frequency_index}<br>Stress: ${d.water_stress_level}`, ev))
+      .on('mouseleave', hideTip)
+      .transition().duration(600).delay(Math.random()*400)
+      .attr('r', 6);
+  });
+
+  g.append('text').attr('x', x(0.6)).attr('y', y(0.7))
+    .attr('font-family',"'Inter',sans-serif").attr('font-size',10)
+    .attr('fill','rgba(212,106,42,0.8)').text('⚠️ High-Risk Zone');
+
+  svg.append('text').attr('x', margin.left + width/2).attr('y', height + margin.top + margin.bottom - 6)
+    .attr('text-anchor','middle').attr('font-family',"'Inter',sans-serif").attr('font-size',10)
+    .attr('fill','rgba(237,232,224,0.5)').text('Groundwater Depletion Rate');
+  svg.append('text').attr('transform','rotate(-90)').attr('x', -(margin.top + height/2)).attr('y', 14)
+    .attr('text-anchor','middle').attr('font-family',"'Inter',sans-serif").attr('font-size',10)
+    .attr('fill','rgba(237,232,224,0.5)').text('Drought Frequency Index');
+
+  const regions = [...new Set(DATA.map(d=>d.region))].slice(0,8);
+  const legX = W - margin.right + 10;
+  regions.forEach((r,i) => {
+    const lgy = margin.top + i*20;
+    svg.append('circle').attr('cx', legX+6).attr('cy', lgy+6).attr('r',5)
+      .attr('fill', REGION_COLORS[r] || '#888');
+    svg.append('text').attr('x', legX+16).attr('y', lgy+6).attr('dy','0.35em')
+      .attr('font-family',"'Inter',sans-serif").attr('font-size',8)
+      .attr('fill','rgba(237,232,224,0.5)').text(r.length > 12 ? r.slice(0,12)+'…' : r);
+  });
+}
+
+function buildGWBar() {
+  const container = document.getElementById('gw-bar-chart');
+  if (!container) return;
+  
+  const top15 = [...DATA].sort((a,b) => b.groundwater_depletion_rate - a.groundwater_depletion_rate).slice(0,15);
+  const W = container.clientWidth || 700;
+  const margin = {top:10,right:80,bottom:10,left:150};
+  const width = W - margin.left - margin.right;
+  const H = top15.length * 24;
+
+  const svg = d3.select(container).append('svg')
+    .attr('width',W).attr('height', H + margin.top + margin.bottom + 30);
+  const g = svg.append('g').attr('transform',`translate(${margin.left},${margin.top})`);
+
+  const x = d3.scaleLinear().domain([0,0.8]).range([0,width]);
+  const y = d3.scaleBand().domain(top15.map(d=>d.country)).range([0,H]).padding(0.25);
+
+  g.append('g').attr('class','grid').call(d3.axisBottom(x).ticks(5).tickSize(H).tickFormat('')).attr('transform','translate(0,0)');
+
+  top15.forEach((d,i) => {
+    const col = d.groundwater_depletion_rate > 0.5 ? '#b84545' : d.groundwater_depletion_rate > 0.3 ? '#d46a2a' : '#d4a938';
+    g.append('rect').attr('class','bar')
+      .attr('x',0).attr('y',y(d.country))
+      .attr('width',0).attr('height',y.bandwidth())
+      .attr('fill',col).attr('rx',3)
+      .on('mousemove', (ev) => showTip(`<strong>${d.country}</strong>GW Depletion: ${d.groundwater_depletion_rate}<br>Drought Index: ${d.drought_frequency_index}`, ev))
+      .on('mouseleave', hideTip)
+      .transition().duration(700).delay(i*35)
+      .attr('width', x(d.groundwater_depletion_rate));
+
+    g.append('text').attr('x',-6).attr('y',y(d.country)+y.bandwidth()/2).attr('dy','0.35em')
+      .attr('text-anchor','end').attr('font-family',"'Inter',sans-serif").attr('font-size',10)
+      .attr('fill','rgba(237,232,224,0.75)').text(d.country);
+
+    g.append('text').attr('x',x(d.groundwater_depletion_rate)+4).attr('y',y(d.country)+y.bandwidth()/2).attr('dy','0.35em')
+      .attr('font-family',"'Inter',sans-serif").attr('font-size',9)
+      .attr('fill','rgba(237,232,224,0.5)').text(d.groundwater_depletion_rate.toFixed(2));
+  });
+
+  g.append('g').attr('class','axis').attr('transform',`translate(0,${H})`).call(d3.axisBottom(x).ticks(5));
+}
+
+// ═══════════════════════════════════════════════════
+// CHART 6: INTERACTIVE EXPLORER
+// ═══════════════════════════════════════════════════
+function buildExplorer() {
+  const xKey = document.getElementById('x-axis').value;
+  const yKey = document.getElementById('y-axis').value;
+  const colorKey = document.getElementById('color-by').value;
+
+  const container = document.getElementById('explorer-chart');
+  container.innerHTML = '';
+
+  const W = container.clientWidth || 700;
+  const margin = {top:20,right:20,bottom:60,left:70};
+  const width = W - margin.left - margin.right;
+  const height = 380;
+
+  const svg = d3.select(container).append('svg')
+    .attr('width',W).attr('height', height + margin.top + margin.bottom);
+  const g = svg.append('g').attr('transform',`translate(${margin.left},${margin.top})`);
+
+  const validData = DATA.filter(d => d[xKey] > 0 && d[yKey] >= 0);
+
+  const xDom = d3.extent(validData, d=>d[xKey]);
+  const yDom = d3.extent(validData, d=>d[yKey]);
+
+  const useLog = xKey === 'gdp_per_capita_usd' || xKey === 'freshwater_withdrawal_km3';
+  const x = useLog
+    ? d3.scaleLog().domain([Math.max(1, xDom[0]), xDom[1]]).range([0,width])
+    : d3.scaleLinear().domain(xDom).nice().range([0,width]);
+  const y = d3.scaleLinear().domain(yDom).nice().range([height,0]);
+
+  g.append('g').attr('class','grid').call(d3.axisLeft(y).ticks(5).tickSize(-width).tickFormat(''));
+  g.append('g').attr('class','axis').attr('transform',`translate(0,${height})`)
+    .call(d3.axisBottom(x).ticks(5, useLog ? '$,' : ','));
+  g.append('g').attr('class','axis').call(d3.axisLeft(y).ticks(5));
+
+  const colorMap = colorKey === 'region' ? REGION_COLORS : STRESS_COLORS;
+
+  validData.forEach((d, i) => {
+    const col = colorMap[d[colorKey]] || '#888';
+    g.append('circle').attr('class','dot')
+      .attr('cx', x(Math.max(useLog ? 1 : xDom[0], d[xKey])))
+      .attr('cy', y(d[yKey]))
+      .attr('r', 5)
+      .attr('fill', col).attr('opacity', 0.85)
+      .attr('stroke','rgba(0,0,0,0.2)').attr('stroke-width',0.5)
+      .on('mousemove', (ev) => showTip(`<strong>${d.country}</strong>${xKey}: ${typeof d[xKey] === 'number' ? d[xKey].toLocaleString() : d[xKey]}<br>${yKey}: ${typeof d[yKey] === 'number' ? d[yKey].toLocaleString() : d[yKey]}`, ev))
+      .on('mouseleave', hideTip)
+      .transition().duration(500).delay(Math.random()*300)
+      .attr('r', 6);
+
+    if (d[yKey] === d3.max(validData, e=>e[yKey]) || d[xKey] === d3.max(validData, e=>e[xKey])) {
+      g.append('text').attr('x', x(Math.max(useLog?1:xDom[0], d[xKey])) + 7)
+        .attr('y', y(d[yKey])).attr('dy','0.35em')
+        .attr('font-family',"'Inter',sans-serif").attr('font-size',9)
+        .attr('fill','rgba(237,232,224,0.65)').text(d.country);
+    }
+  });
+
+  const axisLabels = {
+    gdp_per_capita_usd: 'GDP per Capita (USD)',
+    access_safe_water_pct: 'Safe Water Access (%)',
+    annual_rainfall_mm: 'Annual Rainfall (mm)',
+    groundwater_depletion_rate: 'Groundwater Depletion Rate',
+    drought_frequency_index: 'Drought Frequency Index',
+    deaths_per_100k_unsafe_water: 'Deaths per 100k',
+    freshwater_withdrawal_km3: 'Freshwater Withdrawal (km³)',
+    access_sanitation_pct: 'Sanitation Access (%)',
+  };
+
+  svg.append('text').attr('x', margin.left + width/2).attr('y', height + margin.top + margin.bottom - 6)
+    .attr('text-anchor','middle').attr('font-family',"'Inter',sans-serif").attr('font-size',10)
+    .attr('fill','rgba(237,232,224,0.5)').text(axisLabels[xKey]);
+  svg.append('text').attr('transform','rotate(-90)').attr('x', -(margin.top + height/2)).attr('y', 14)
+    .attr('text-anchor','middle').attr('font-family',"'Inter',sans-serif").attr('font-size',10)
+    .attr('fill','rgba(237,232,224,0.5)').text(axisLabels[yKey]);
+}
+
+['x-axis','y-axis','color-by'].forEach(id => {
+  document.getElementById(id).addEventListener('change', buildExplorer);
+});
+
+// ═══════════════════════════════════════════════════
+// CHART 7: OUTLOOK (Fixed Regional Summary)
+// ═══════════════════════════════════════════════════
+function buildOutlookChart() {
+  const container = document.getElementById('outlook-chart');
+  if (!container) return;
+  
+  const W = container.clientWidth || 700;
+
+  // Group by region
+  const regions = {};
+  DATA.forEach(d => {
+    if (!regions[d.region]) {
+      regions[d.region] = {name:d.region, waterSum:0, deathSum:0, count:0};
+    }
+    regions[d.region].waterSum += d.access_safe_water_pct;
+    regions[d.region].deathSum += d.deaths_per_100k_unsafe_water;
+    regions[d.region].count++;
+  });
+  
+  const regData = Object.values(regions)
+    .map(r => ({
+      name: r.name,
+      avgWater: r.waterSum / r.count,
+      avgDeaths: r.deathSum / r.count,
+      count: r.count
+    }))
+    .filter(r => r.count > 0);
+
+  const margin = {top:20,right:20,bottom:100,left:70};
+  const width = W - margin.left - margin.right;
+  const height = 300;
+
+  const svg = d3.select(container).append('svg')
+    .attr('width',W).attr('height', height + margin.top + margin.bottom);
+  const g = svg.append('g').attr('transform',`translate(${margin.left},${margin.top})`);
+
+  const sorted = regData.sort((a,b) => b.avgDeaths - a.avgDeaths);
+
+  const x = d3.scaleBand().domain(sorted.map(d=>d.name)).range([0,width]).padding(0.4);
+  const y1 = d3.scaleLinear().domain([0, d3.max(sorted, d=>d.avgDeaths)]).range([height,0]);
+  const y2 = d3.scaleLinear().domain([d3.min(sorted, d=>d.avgWater)-5, 105]).range([height,0]);
+
+  g.append('g').attr('class','grid').call(d3.axisLeft(y1).ticks(5).tickSize(-width).tickFormat(''));
+  g.append('g').attr('class','axis').attr('transform',`translate(0,${height})`)
+    .call(d3.axisBottom(x).tickSize(0))
+    .selectAll('text').attr('transform','rotate(-35)').attr('text-anchor','end').attr('font-size',10);
+  g.append('g').attr('class','axis').call(d3.axisLeft(y1).ticks(5).tickFormat(d=>d));
+
+  sorted.forEach((d,i) => {
+    // Bar (deaths)
+    g.append('rect').attr('class','bar')
+      .attr('x', x(d.name)).attr('y', y1(d.avgDeaths))
+      .attr('width', x.bandwidth()/2 - 2).attr('height', height - y1(d.avgDeaths))
+      .attr('fill', '#d46a2a').attr('opacity',0.85).attr('rx',3)
+      .on('mousemove', (ev) => showTip(`<strong>${d.name}</strong>Avg deaths/100k: ${d.avgDeaths.toFixed(1)}<br>Avg water access: ${d.avgWater.toFixed(1)}%`, ev))
+      .on('mouseleave', hideTip)
+      .transition().duration(700).delay(i*50)
+      .attr('height', height - y1(d.avgDeaths));
+
+    // Dot (water access)
+    g.append('circle')
+      .attr('cx', x(d.name) + x.bandwidth() * 0.75)
+      .attr('cy', y2(d.avgWater))
+      .attr('r', 0)
+      .attr('fill', '#5db8d8')
+      .attr('opacity', 0.9)
+      .on('mousemove', (ev) => showTip(`<strong>${d.name}</strong>Avg water access: ${d.avgWater.toFixed(1)}%<br>Avg deaths/100k: ${d.avgDeaths.toFixed(1)}`, ev))
+      .on('mouseleave', hideTip)
+      .transition().duration(700).delay(i*50)
+      .attr('r', 6);
+  });
+
+  // Legend
+  g.append('rect').attr('x', width-120).attr('y',0).attr('width',14).attr('height',12).attr('fill','#d46a2a').attr('rx',2);
+  g.append('text').attr('x', width-100).attr('y',6).attr('dy','0.35em')
+    .attr('font-family',"'Inter',sans-serif").attr('font-size',10)
+    .attr('fill','rgba(237,232,224,0.65)').text('Deaths/100k (left axis)');
+  
+  g.append('circle').attr('cx', width-119).attr('cy', 22).attr('r',6).attr('fill','#5db8d8');
+  g.append('text').attr('x', width-100).attr('y',22).attr('dy','0.35em')
+    .attr('font-family',"'Inter',sans-serif").attr('font-size',10)
+    .attr('fill','rgba(237,232,224,0.65)').text('Water Access % (right axis)');
+
+  // Right y-axis
+  svg.append('g')
+    .attr('transform', `translate(${margin.left + width}, ${margin.top})`)
+    .attr('class','axis')
+    .call(d3.axisRight(y2).ticks(5).tickFormat(d=>d+'%'))
+    .style('color', '#5db8d8');
+}
+
+// ═══════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════
+window.addEventListener('load', () => {
+  buildAccessChart();
+  buildWorldMap();
+  buildStressChart();
+  buildStressBreakdown();
+  buildMortalityChart();
+  buildGWScatter();
+  buildGWBar();
+  buildExplorer();
+  buildOutlookChart();
+});
+</script>
+</body>
+</html>
